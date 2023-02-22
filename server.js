@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 8080;
 const HOST = "0.0.0.0";
 
 var testUsers = [
-  { email: "user@user.com", password: "1234", role: "Viwer" },
+  { email: "user@user.com", password: "1234", role: "Viewer" },
   { email: "admin@user.com", password: "1234", role: "Admin" },
 ];
 
