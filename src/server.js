@@ -1,23 +1,23 @@
 // server.js
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const userRoutes = require('./routes/user')
+
 const express = require("express");
+require("dotenv").config();
 
 //CREATE EXPRESS APP
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+
+// Middleware
+app.use("/api", userRoutes);
+app.use(express.json());
 
 // DECLARE JWT-secret
-const JWT_Secret = "your_secret_key";
+const JWT_Secret = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 8080;
-const HOST = "0.0.0.0";
-
-var testUsers = [
-  { email: "user@user.com", password: "1234", role: "Viewer" },
-  { email: "admin@user.com", password: "1234", role: "Admin" },
-];
 
 app.get("/", (req, res) => {
   res.send(`
@@ -30,19 +30,22 @@ app.get("/", (req, res) => {
   `);
 });
 
-app.post("/api/authenticate", (req, res) => {
+app.post("/api/authenticate", async (req, res) => {
   if (req.body) {
-    var user = req.body;
+    let user = req.body;
 
-    var foundUser = userExist(user, testUsers);
+    let response = await fetch(`http://localhost:${PORT}/api/users`);
+    const testUsers = await response.json();
+    
+    let findUser = userExist(user, testUsers);
 
-    if (foundUser) {
-      var token = jwt.sign(foundUser, JWT_Secret);
+    if (findUser) {
+      let token = jwt.sign(findUser, JWT_Secret);
       res.status(200).send({
         signed_user: {
-          email: foundUser.email,
-          password: foundUser.password,
-          role: foundUser.role,
+          email: findUser.email,
+          password: findUser.password,
+          role: findUser.role,
         },
         token: token,
       });
@@ -58,12 +61,24 @@ app.post("/api/authenticate", (req, res) => {
   }
 });
 
+
 function userExist(user, users) {
   return users.find(
     (u) => u.email === user.email && u.password === user.password
   );
 }
 
-app.listen(PORT, HOST, () =>
-  console.log(`Servidor encendido en: PORT -> ${PORT} | HOST -> ${HOST}`)
-);
+// Mongo DB Conection
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("Conectado a Mongodb Atlas"))
+  .catch((error) =>
+    console.log(
+      `Ha habido un error: ${error}`
+    )
+  );
+
+app.listen(PORT, () => {
+  console.log(`Servidor encendido en: PORT -> ${PORT}`);
+ 
+});
